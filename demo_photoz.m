@@ -30,6 +30,8 @@ csl_method = 'normal';                  % cost-sensitive learning option: [defau
                                         %       'normal':       no weights assigned, all samples are equally important
  
 binWidth = 0.1;                         % the width of the bin for 'balanced' cost-sensitive learning [default=range(output)/100]
+
+percentage = 0.2;                       % percentage of data missing
 %%%%%%%%%%%%%% Prepare data %%%%%%%%%%%%%% 
  
 dataPath = 'data/sdss_sample.csv';   % path to the data set, has to be in the following format m_1,m_2,..,m_k,e_1,e_2,...,e_k,z_spec
@@ -41,7 +43,8 @@ outPath = [];                           % if set to a path, the output will be s
 X = csvread(dataPath);
 Y = X(:,end);
 X(:,end) = [];
- 
+
+% Extract number of filters and number of sources 
 [n,d] = size(X);
 filters = d/2;
  
@@ -55,10 +58,25 @@ if(inputNoise)
     % treat the mag-errors as input noise variance
     Psi = X(:,filters+1:end).^2;
     X(:,filters+1:end) = [];
+    d=filters;
 else
     % treat the mag-errors as input additional inputs
     X(:,filters+1:end) = log(X(:,filters+1:end));
     Psi = [];
+end
+
+% Delete a percentage of the data randomly
+if(percentage>0);
+    
+    psize = ceil(percentage*n); % How many must be deleted
+    
+    for i=1:d; % For each dimension delete the given percent
+        
+        r = randperm(n)'; % Make a random permutation of the n points
+        X(r(1:psize),i) = nan; % remove the ith variable from a fraction of the selected sample
+    
+    end
+    
 end
 
 % select training, validation and testing sets from the data
